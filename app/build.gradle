@@ -14,13 +14,12 @@ android {
     }
     buildTypes {
         release {
-            runProguard false
+            minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
 }
 
 dependencies {
-    compile files('libs/commons-io-2.4.jar')
     compile fileTree(dir: 'libs', include: ['*.jar'])
 }
