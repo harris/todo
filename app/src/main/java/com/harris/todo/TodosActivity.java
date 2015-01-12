@@ -4,13 +4,15 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+
+import com.harris.todo.adapter.TodoAdapter;
+import com.harris.todo.models.Todo;
 
 import org.apache.commons.io.FileUtils;
 
@@ -23,8 +25,8 @@ import java.util.List;
 public class TodosActivity extends Activity {
     private static final int REQUEST_CODE = 20;
     private ListView lvItems;
-    private List<String> todoItems;
-    private ArrayAdapter<String> todoAdapter;
+    private List<Todo> todoItems;
+    private TodoAdapter<Todo> todoAdapter;
     private EditText editText;
     private Button addButton;
 
@@ -36,7 +38,7 @@ public class TodosActivity extends Activity {
         editText = (EditText) findViewById(R.id.editText);
         lvItems = (ListView) findViewById(R.id.lvitems);
         addButton = (Button) findViewById(R.id.btn_add);
-        todoAdapter = new ArrayAdapter<String>(getBaseContext(), android.R.layout.simple_list_item_1, todoItems);
+        todoAdapter = new TodoAdapter<Todo>(getBaseContext(), android.R.layout.simple_list_item_1, todoItems);
         lvItems.setAdapter(todoAdapter);
         setupButtonListener();
         setupListViewListener();
@@ -47,7 +49,7 @@ public class TodosActivity extends Activity {
             @Override
             public void onClick(View v) {
                 String itemText = editText.getText().toString();
-                todoItems.add(itemText);
+                todoItems.add(new Todo(itemText));
                 editText.setText("");
                 writeItems();
             }
@@ -58,9 +60,12 @@ public class TodosActivity extends Activity {
         File filesDir = getFilesDir();
         File todoFile = new File(filesDir, "todo.txt");
         try {
-            todoItems = new ArrayList<String>(FileUtils.readLines(todoFile));
+            todoItems = new ArrayList<Todo>();
+            for (String todoContent: FileUtils.readLines(todoFile)) {
+                todoItems.add(new Todo(todoContent));
+            }
         } catch (IOException e) {
-            todoItems = new ArrayList<String>();
+            todoItems = new ArrayList<Todo>();
         }
     }
 
@@ -89,7 +94,7 @@ public class TodosActivity extends Activity {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Intent intent = new Intent(getBaseContext(), TodoEditActivity.class);
                 intent.putExtra("position", position);
-                intent.putExtra("content", todoItems.get(position));
+                intent.putExtra("content", todoItems.get(position).getContent());
                 startActivityForResult(intent, REQUEST_CODE);
             }
         });
@@ -99,7 +104,8 @@ public class TodosActivity extends Activity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == RESULT_OK && requestCode == REQUEST_CODE) {
-            todoItems.set(data.getIntExtra("position", -1), data.getStringExtra("content"));
+            Todo todo = todoItems.get(data.getIntExtra("position", -1));
+            todo.setContent(data.getStringExtra("content"));
             todoAdapter.notifyDataSetChanged();
             writeItems();
         }
