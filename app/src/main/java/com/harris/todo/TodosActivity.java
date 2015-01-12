@@ -1,17 +1,18 @@
 package com.harris.todo;
 
 import android.app.Activity;
+import android.app.FragmentManager;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 
 import com.harris.todo.adapter.TodoAdapter;
+import com.harris.todo.fragments.EditTodoFragment;
 import com.harris.todo.models.Todo;
 
 import org.apache.commons.io.FileUtils;
@@ -22,13 +23,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class TodosActivity extends Activity {
+public class TodosActivity extends Activity implements EditTodoFragment.EditTodoDialogListener {
     private static final int REQUEST_CODE = 20;
     private ListView lvItems;
     private List<Todo> todoItems;
     private TodoAdapter<Todo> todoAdapter;
     private EditText editText;
     private Button addButton;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,10 +94,7 @@ public class TodosActivity extends Activity {
         lvItems.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Intent intent = new Intent(getBaseContext(), TodoEditActivity.class);
-                intent.putExtra("position", position);
-                intent.putExtra("content", todoItems.get(position).getContent());
-                startActivityForResult(intent, REQUEST_CODE);
+                showEditDialog(todoItems.get(position).getContent(), position);
             }
         });
     }
@@ -111,10 +110,24 @@ public class TodosActivity extends Activity {
         }
     }
 
+    private void showEditDialog(String content, int position) {
+        FragmentManager fm = getFragmentManager();
+        EditTodoFragment editTodoFragment = EditTodoFragment.newInstance(content, position);
+        editTodoFragment.show(fm, "fragment_edit_todo");
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds todoItems to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_todos, menu);
         return true;
+    }
+
+    @Override
+    public void onFinishEditDialog(String content, int position) {
+        Todo todo = todoItems.get(position);
+        todo.setContent(content);
+        todoAdapter.notifyDataSetChanged();
+        writeItems();
     }
 }
